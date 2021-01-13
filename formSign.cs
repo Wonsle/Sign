@@ -13,12 +13,21 @@ using System.Runtime.InteropServices;
 
 namespace Sign
 {
+    /// <summary>
+    /// 參考:CodingPioneer C#Winform实现手写录入签名与保存为透明png图片
+    /// 連結:https://blog.csdn.net/zlbdmm/article/details/111977043
+    /// </summary>
     public partial class formSing : Form
     {
+        // 滑鼠軌跡
         private GraphicsPath mousePath = new GraphicsPath();
-        private int myAlpha = 100;
-        private Color myUserColor = new Color();
+        // 透明度
+        private int myAlpha = 255;
+        // 畫筆顏色
+        private Color paintColor = new Color();
+        //畫筆寬度
         private int myPenWidth = 3;
+        // 儲存BMP檔案
         public Bitmap savedBitmap;
         public formSing()
         {
@@ -32,7 +41,7 @@ namespace Sign
         }
 
         /// <summary>
-        /// 開始簽名
+        /// 左鍵點下時，開始簽名
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -68,7 +77,7 @@ namespace Sign
 
 
         /// <summary>
-        /// 
+        /// 繪製元件
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -76,9 +85,8 @@ namespace Sign
         {
             try
             {
-                myUserColor = Color.Black;
-                myAlpha = 255;
-                Pen p = new Pen(Color.FromArgb(myAlpha, myUserColor), myPenWidth);
+                paintColor = Color.Black;                
+                Pen p = new Pen(Color.FromArgb(myAlpha, paintColor), myPenWidth);
                 e.Graphics.DrawPath(p, mousePath);
             }
             catch
@@ -91,25 +99,26 @@ namespace Sign
         {
             savedBitmap = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             pictureBox1.DrawToBitmap(savedBitmap, new Rectangle(0, 0, pictureBox1.Width, pictureBox1.Height));
+            //存檔至執行檔目錄底下
             savedBitmap.Save($"{Application.StartupPath}\\Sign.png", ImageFormat.Png);
 
-
-            //Bitmap bmp = savedBitmap;
-            //BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, bmp.PixelFormat);
-            //int length = data.Stride * data.Height;
-            //IntPtr prt = data.Scan0;
-            //byte[] buff = new byte[length];
-            //Marshal.Copy(prt, buff, 0, length);
-            //for (int i = 3; i < length; i += 4)
-            //{
-            //    if (buff[i - 1] >= 230 && buff[i - 2] >= 230 && buff[i - 3] >= 230)
-            //    {
-            //        buff[i] = 0;
-            //    }
-            //}
-            //Marshal.Copy(buff, 0, prt, length);
-            //bmp.UnlockBits(data);
-            //bmp.Save($"{Application.StartupPath}\\Sign.png", ImageFormat.Png);
+            // 去被
+            Bitmap bmp = savedBitmap;
+            BitmapData data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadWrite, bmp.PixelFormat);
+            int length = data.Stride * data.Height;
+            IntPtr prt = data.Scan0;
+            byte[] buff = new byte[length];
+            Marshal.Copy(prt, buff, 0, length);
+            for (int i = 3; i < length; i += 4)
+            {
+                if (buff[i - 1] >= 230 && buff[i - 2] >= 230 && buff[i - 3] >= 230)
+                {
+                    buff[i] = 0;
+                }
+            }
+            Marshal.Copy(buff, 0, prt, length);
+            bmp.UnlockBits(data);
+            bmp.Save($"{Application.StartupPath}\\去被Sign.png", ImageFormat.Png);
         }
 
         private void btnCancle_Click(object sender, EventArgs e)
